@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'customer',
     'blog',
     'anymail',
+ 
     # 'captcha',
 ]
 

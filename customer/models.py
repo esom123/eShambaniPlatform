@@ -38,7 +38,7 @@ class Adress(models.Model):
     def __str__(self):
         return self.full_name
 class Notification(models.Model):
-    user=models.ForeignKey(User,on_delete=models.CASCADE,null=True)
+    user=models.ForeignKey(User,on_delete=models.CASCADE,null=True, related_name='+')
     type=models.CharField(max_length=100,choices=TYPE,default=None)
     seen=models.BooleanField(default=False)
     date=models.DateTimeField(auto_now_add=True)

@@ -43,7 +43,7 @@ class Vendor(models.Model):
         
 class Payout(models.Model):
     vendor=models.ForeignKey(Vendor,on_delete=models.SET_NULL,null=True)
-    item=models.ForeignKey("Store.OrderItem",on_delete=models.SET_NULL ,null=True,blank=True)
+    item=models.ForeignKey("store.OrderItem",on_delete=models.SET_NULL ,null=True,blank=True)
     amount=models.DecimalField(max_digits=12,decimal_places=2,default=0.00)
     payout_id=ShortUUIDField(unique=True,length=6,max_length=10,alphabet="1234567890")
     date=models.DateField(auto_now_add=True)
@@ -68,7 +68,8 @@ class BankAccount(models.Model):
         return self.bank_name
     
 class Notification(models.Model):
-    user=models.ForeignKey(User,on_delete=models.CASCADE,null=True,blank=True)
+    user=models.ForeignKey(User,on_delete=models.CASCADE,null=True,blank=True ,related_name=" +")
+    
     type=models.CharField(max_length=100,choices=TYPE,default=None)
     
     class Meta:

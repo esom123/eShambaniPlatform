@@ -1,12 +1,13 @@
 from django.contrib import admin
 
+
 # Register your models here.
 from django.contrib import admin
 from vendor import models as vendor_models # type: ignore
 # Register your models here.
 class VendorAdmin(admin.ModelAdmin):
-    list_display=["store_name","country","Vendor_id","date"]
-    search_fields=["store_name","user__username","vendor_id"]
+    list_display=['store_name','country','vendor_id','date']
+    search_fields=['store_name','user__username','vendor_id']
     prepopulated_fields={'slug':('store_name',)}
     list_filter=['country','date']
     
@@ -20,8 +21,8 @@ class BankAccountAdmin(admin.ModelAdmin):
     search_filter=['vendor__store_name','bank_name','account_number']
     list_filter=['account_name']
 class NotificationAdmin(admin.ModelAdmin):
-    list_display=['user','type','order','seen']
-    list_editable=['order']
+    list_display=['user','type']
+    # list_editable=['order']
     
 admin.site.register(vendor_models.Vendor,VendorAdmin)
 admin.site.register(vendor_models.Payout,PayoutAdmin)
