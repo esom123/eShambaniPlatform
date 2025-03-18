@@ -5,7 +5,8 @@ from shortuuid.django_fields import ShortUUIDField
 from django.utils import timezone
 from django.utils.text import slugify
 from django_ckeditor_5.fields import CKEditor5Field
-from  userauth import models as user_models
+from userauth.models import User
+
 import shortuuid 
 
 STATUS=(
@@ -65,35 +66,48 @@ class Category(models.Model):
         ordering=['title']
 
 
-
 class Product(models.Model):
-    name=models.CharField(max_length=255,null=True,blank=True)
-    image=models.ImageField(upload_to="images",blank=True,null=True,default="product.jpg")
-    description=CKEditor5Field('Text',config_name='extend')
-    category=models.ForeignKey(Category,max_length=255,on_delete=models.SET_NULL ,null=True,blank=True)
-    price=models.DecimalField(max_digits=12,decimal_places=2,default=0.00,null=True,blank=True,verbose_name="sales price")
-    regular_price=models.DecimalField(max_digits=12,decimal_places=2,default=0.00,null=True,blank=True,verbose_name="regular price")
-    stock=models.PositiveIntegerField(default=0,null=True,blank=True)
-    shipping=models.DecimalField(max_digits=12,decimal_places=2,default=0.00,null=True,blank=True ,verbose_name="shpping price")
-    status=models.CharField(choices=STATUS,max_length=50,default="published")
-    featured=models.BooleanField(default=False,verbose_name="market place is featured")
-    vendor=models.ForeignKey(user_models.User,on_delete=models.SET_NULL,null=True,blank=True)
-    sku=ShortUUIDField(unique=True,length=5 ,max_length=50,prefix="sku",alphabet="1234567890")
-    slug=models.SlugField(null=True,blank=True)
-    date=models.DateTimeField(default=timezone.now)
-    
+    name = models.CharField(max_length=255, null=True, blank=True)
+    image = models.ImageField(upload_to="images", blank=True, null=True, default="product.jpg")
+    description = CKEditor5Field('Text', config_name='extend')
+    category = models.ForeignKey(Category, max_length=255, on_delete=models.SET_NULL, null=True)
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, null=True, blank=True, verbose_name="sales price")
+    regular_price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, null=True, blank=True, verbose_name="regular price")
+    stock = models.PositiveIntegerField(default=0, null=True, blank=True)
+    shipping = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, null=True, blank=True, verbose_name="shipping price")
+    status = models.CharField(choices=STATUS, max_length=50, default="published")
+    featured = models.BooleanField(default=False, verbose_name="marketplace is featured")
+    vendor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    sku = ShortUUIDField(unique=True, length=5, max_length=50, prefix="sku", alphabet="1234567890")
+    slug = models.SlugField(null=True, blank=True, unique=True)
+    date = models.DateTimeField(default=timezone.now)
+
     class Meta:
-        ordering=['-id']
-        verbose_name_plural="products"
-    
+        ordering = ['-id']
+        verbose_name_plural = "products"
+
     def __str__(self):
-        return self.name
-    
-    
-    def save(self,*args,**kwargs):
-        if not self.slug:
-            self.slug=slugify(self.name) + "-" + str(shortuuid.uuid().lower()[:2])
-            super(Product,self).save(*args,**kwargs)  
+        return self.name if self.name else f"Product {self.id}"
+
+     
+    def average_rating(self):
+        return Review.objects.filter(product=self).aggregate(avg_rating=models.Avg('rating'))['avg_rating']
+    def reviews(self):
+        return Review.objects.filter(product=self)
+    def gallery(self):
+        return Gallery.objects.filter(product=self)
+    def variants(self):
+        return Variant.objects.filter(product=self)
+    def vendor_orders(self):
+        return OrderItem.objects.filter(vendor=self.vendor)
+    def save(self, *args, **kwargs):
+        # Ensure the slug is generated only if it is empty
+        if not self.slug and self.name:
+            self.slug = slugify(self.name) + "-" + str(shortuuid.uuid().lower()[:2])
+        
+        # Always save the product instance
+        super(Product, self).save(*args, **kwargs)
+
 class Variant(models.Model):
     product=models.ForeignKey(Product,on_delete=models.CASCADE,null=True)
     name=models.CharField(max_length=1000, verbose_name="Variants Name",null=True,blank=True)
@@ -120,7 +134,7 @@ class Gallery(models.Model):
 
 class Cart(models.Model):
     product=models.ForeignKey(Product,on_delete=models.CASCADE)
-    user=models.ForeignKey(user_models.User,on_delete=models.SET_NULL,null=True,blank=True)
+    user=models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True)
     qty=models.PositiveIntegerField(default=0,null=True,blank=True)
     price=models.DecimalField(decimal_places=2,max_digits=12,default=0.00,null=True,blank=True)
     sub_total=models.DecimalField(decimal_places=2,max_digits=12,default=0.00,null=True,blank=True)
@@ -136,7 +150,7 @@ class Cart(models.Model):
         return f"{self.cart_id}.{self.product.name}"
     
 class Coupon(models.Model):
-    vendor=models.ForeignKey(user_models.User,on_delete=models.SET_NULL,null=True)
+    vendor=models.ForeignKey(User,on_delete=models.SET_NULL,null=True)
     code=models.CharField(max_length=100)
     discount=models.IntegerField(default=1)
     
@@ -144,8 +158,8 @@ class Coupon(models.Model):
         return self.code
 
 class Order(models.Model):
-    vendors=models.ManyToManyField(user_models.User,blank=True)
-    customer=models.ForeignKey(user_models.User,on_delete=models.SET_NULL,related_name="customer",null=True,blank=True)
+    vendors=models.ManyToManyField(User,blank=True)
+    customer=models.ForeignKey(User,on_delete=models.SET_NULL,related_name="customer",null=True,blank=True)
     sub_total=models.DecimalField(default=0.00,max_digits=12 ,decimal_places=2)
     shipping=models.DecimalField(decimal_places=2,max_digits=12,default=0.00)
     tax=models.DecimalField(decimal_places=2,max_digits=12,default=0.00)
@@ -191,7 +205,7 @@ class OrderItem(models.Model):
     coupon=models.ManyToManyField(Coupon,blank=True)
     applied_coupon=models.BooleanField(default=False)
     item_id=ShortUUIDField(length=6,max_length=25,alphabet="1234567890")
-    vendor=models.ForeignKey(user_models.User,on_delete=models.SET_NULL,null=True,related_name="vendor_order_items")
+    vendor=models.ForeignKey(User,on_delete=models.SET_NULL,null=True,related_name="vendor_order_items")
     date=models.DateTimeField(default=timezone.now)
     
     def order_id(self):
@@ -202,7 +216,7 @@ class OrderItem(models.Model):
         ordering=['-date']
         
 class Review(models.Model):
-    user=models.ForeignKey(user_models.User,on_delete=models.SET_NULL,blank=True,null=True)
+    user=models.ForeignKey(User,on_delete=models.SET_NULL,blank=True,null=True)
     product=models.ForeignKey(Product,on_delete=models.SET_NULL,blank=True,null=True,related_name="reviews")
     review=models.TextField(null=True,blank=True)
     reply=models.TextField(null=True,blank=True)

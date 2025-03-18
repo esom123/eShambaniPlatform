@@ -3,5 +3,6 @@ from .import views
 app_name="store"
 
 urlpatterns=[
-    path("store/",views.index,name="index")
+    path("",views.index,name="index"),
+    path("detail/<slug:slug>/",views.product_detail,name="product_detail"),
 ]

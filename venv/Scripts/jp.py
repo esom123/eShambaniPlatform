@@ -1,4 +1,4 @@
-#!F:\DjangoE\FastCart-Ecommerce\venv\Scripts\python.exe
+#!D:\eShambaniPlatform\venv\Scripts\python.exe
 
 import sys
 import json
