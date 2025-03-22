@@ -117,7 +117,7 @@ class Variant(models.Model):
         return self.name
     
 class VariantItem(models.Model):
-    variant=models.ForeignKey(Variant,on_delete=models.CASCADE,related_name="variant_items")
+    variant=models.ForeignKey(Variant,on_delete=models.CASCADE,related_name="items")
     title=models.CharField(max_length=1000,verbose_name="Item Title",null=True,blank=True)
     content=models.CharField(max_length=1000,verbose_name="item content",null=True,blank=True)
     
